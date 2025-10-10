@@ -17,10 +17,10 @@ package com.google.cloud.aiplatform.fs;
 
 import com.google.api.gax.rpc.NotFoundException;
 import com.google.api.gax.rpc.PermissionDeniedException;
-import com.google.cloud.aiplatform.v1beta1.FeatureOnlineStoreServiceClient;
-import com.google.cloud.aiplatform.v1beta1.FeatureOnlineStoreServiceSettings;
-import com.google.cloud.aiplatform.v1beta1.GenerateFetchAccessTokenRequest;
-import com.google.cloud.aiplatform.v1beta1.GenerateFetchAccessTokenResponse;
+import com.google.cloud.aiplatform.v1.FeatureOnlineStoreServiceClient;
+import com.google.cloud.aiplatform.v1.FeatureOnlineStoreServiceSettings;
+import com.google.cloud.aiplatform.v1.GenerateFetchAccessTokenRequest;
+import com.google.cloud.aiplatform.v1.GenerateFetchAccessTokenResponse;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;

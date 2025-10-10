@@ -15,11 +15,11 @@
  */
 package com.google.cloud.aiplatform.fs;
 
-import com.google.cloud.aiplatform.v1beta1.FeatureViewDataFormat;
-import com.google.cloud.aiplatform.v1beta1.FeatureViewDataKey;
-import com.google.cloud.aiplatform.v1beta1.FeatureViewDataKey.CompositeKey;
-import com.google.cloud.aiplatform.v1beta1.FeatureViewName;
-import com.google.cloud.aiplatform.v1beta1.FetchFeatureValuesRequest;
+import com.google.cloud.aiplatform.v1.FeatureViewDataFormat;
+import com.google.cloud.aiplatform.v1.FeatureViewDataKey;
+import com.google.cloud.aiplatform.v1.FeatureViewDataKey.CompositeKey;
+import com.google.cloud.aiplatform.v1.FeatureViewName;
+import com.google.cloud.aiplatform.v1.FetchFeatureValuesRequest;
 import com.google.protobuf.Timestamp;
 import java.time.Instant;
 

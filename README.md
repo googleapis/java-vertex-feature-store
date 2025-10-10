@@ -22,15 +22,15 @@ If you're using Maven, add the following to your dependencies:
   <exclusions>
     <exclusion>
       <groupId>com.google.api.grpc</groupId>
-      <artifactId>proto-google-cloud-aiplatform-v1beta1</artifactId>
+      <artifactId>proto-google-cloud-aiplatform-v1</artifactId>
     </exclusion>
     <exclusion>
       <groupId>com.google.api.grpc</groupId>
-      <artifactId>grpc-google-cloud-aiplatform-v1beta1</artifactId>
+      <artifactId>grpc-google-cloud-aiplatform-v1</artifactId>
     </exclusion>
     <exclusion>
       <groupId>com.google.cloud</groupId>
-      <artifactId>gapic-google-cloud-aiplatform-v1beta1</artifactId>
+      <artifactId>gapic-google-cloud-aiplatform-v1</artifactId>
     </exclusion>
   </exclusions>
 </dependency>
@@ -41,12 +41,12 @@ If you're using Maven, add the following to your dependencies:
 
 ```java
 import com.google.cloud.aiplatform.fs.FeatureOnlineStoreDirectClient;
-import com.google.cloud.aiplatform.v1beta1.FeatureValue;
-import com.google.cloud.aiplatform.v1beta1.FeatureView;
-import com.google.cloud.aiplatform.v1beta1.FeatureViewDataFormat;
-import com.google.cloud.aiplatform.v1beta1.FeatureViewDataKey;
-import com.google.cloud.aiplatform.v1beta1.FetchFeatureValuesRequest;
-import com.google.cloud.aiplatform.v1beta1.FetchFeatureValuesResponse;
+import com.google.cloud.aiplatform.v1.FeatureValue;
+import com.google.cloud.aiplatform.v1.FeatureView;
+import com.google.cloud.aiplatform.v1.FeatureViewDataFormat;
+import com.google.cloud.aiplatform.v1.FeatureViewDataKey;
+import com.google.cloud.aiplatform.v1.FetchFeatureValuesRequest;
+import com.google.cloud.aiplatform.v1.FetchFeatureValuesResponse;
 
 public class DirectReadExample {
 
@@ -97,6 +97,8 @@ import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.StatusCode;
 import com.google.api.gax.rpc.StatusCode.Code;
 import com.google.api.gax.rpc.TransportChannelProvider;
+import com.google.cloud.aiplatform.fs.DirectClientSettings;
+import com.google.cloud.aiplatform.fs.FeatureOnlineStoreDirectClient;
 
 public class DirectReadExample {
 

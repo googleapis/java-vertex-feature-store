@@ -15,8 +15,8 @@
  */
 package com.google.cloud.aiplatform.fs;
 
-import com.google.cloud.aiplatform.v1beta1.FeatureOnlineStoreAdminServiceClient;
-import com.google.cloud.aiplatform.v1beta1.FeatureOnlineStoreAdminServiceSettings;
+import com.google.cloud.aiplatform.v1.FeatureOnlineStoreAdminServiceClient;
+import com.google.cloud.aiplatform.v1.FeatureOnlineStoreAdminServiceSettings;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;

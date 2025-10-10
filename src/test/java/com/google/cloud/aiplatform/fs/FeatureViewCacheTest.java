@@ -20,7 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.api.gax.rpc.NotFoundException;
 import com.google.api.gax.rpc.PermissionDeniedException;
-import com.google.cloud.aiplatform.v1beta1.FeatureView;
+import com.google.cloud.aiplatform.v1.FeatureView;
 import io.grpc.StatusRuntimeException;
 import org.junit.Assert;
 import org.junit.Test;

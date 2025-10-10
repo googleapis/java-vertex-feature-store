@@ -15,11 +15,11 @@
  */
 package com.google.cloud.aiplatform.fs;
 
-import com.google.cloud.aiplatform.v1beta1.FeatureOnlineStore;
-import com.google.cloud.aiplatform.v1beta1.FeatureOnlineStoreAdminServiceGrpc.FeatureOnlineStoreAdminServiceImplBase;
-import com.google.cloud.aiplatform.v1beta1.FeatureView;
-import com.google.cloud.aiplatform.v1beta1.GetFeatureOnlineStoreRequest;
-import com.google.cloud.aiplatform.v1beta1.GetFeatureViewRequest;
+import com.google.cloud.aiplatform.v1.FeatureOnlineStore;
+import com.google.cloud.aiplatform.v1.FeatureOnlineStoreAdminServiceGrpc.FeatureOnlineStoreAdminServiceImplBase;
+import com.google.cloud.aiplatform.v1.FeatureView;
+import com.google.cloud.aiplatform.v1.GetFeatureOnlineStoreRequest;
+import com.google.cloud.aiplatform.v1.GetFeatureViewRequest;
 import com.google.protobuf.AbstractMessage;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
