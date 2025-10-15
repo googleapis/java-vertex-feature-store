@@ -16,9 +16,9 @@ If you're using Maven, add the following to your dependencies:
 [//]: # ({x-version-update-start:google-genai:released})
 ```xml
 <dependency>
-  <groupId>com.google.cloud.aiplatform.fs</groupId>
+  <groupId>com.google.cloud</groupId>
   <artifactId>google-cloud-aiplatform-fs</artifactId>
-  <version>3.61.0</version>
+  <version>3.78.0</version>
   <exclusions>
     <exclusion>
       <groupId>com.google.api.grpc</groupId>
