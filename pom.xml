@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.google.cloud</groupId>
   <artifactId>google-cloud-aiplatform-fs</artifactId>
-  <version>3.61.0</version>
+  <version>3.78.0</version>
   <packaging>jar</packaging>
   <name>Google Cloud Vertex AI Custom SDK for Feature Store</name>
   <parent>
@@ -17,13 +17,15 @@
   <properties>
     <skipUnitTests>false</skipUnitTests>
     <checkstyle.header.file>java.header</checkstyle.header.file>
+    <bigtable.version>2.67.1</bigtable.version>
+    <aiplatform.version>3.78.0</aiplatform.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-bigtable</artifactId>
-      <version>2.51.1</version>
+      <version>${bigtable.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.api</groupId>
@@ -31,21 +33,23 @@
       <version>2.59.1</version>
     </dependency>
 
-    <!-- START locally built aiplatform jars using private gapic -->
+    <!-- aiplatform library -->
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-aiplatform</artifactId>
+      <version>${aiplatform.version}</version>
+    </dependency>
     <dependency>
       <groupId>com.google.api.grpc</groupId>
       <artifactId>proto-google-cloud-aiplatform-v1</artifactId>
-      <version>0.0.0-SNAPSHOT</version>
+      <version>${aiplatform.version}</version>
     </dependency>
+    <!-- For mocking GRPC class -->
     <dependency>
       <groupId>com.google.api.grpc</groupId>
       <artifactId>grpc-google-cloud-aiplatform-v1</artifactId>
-      <version>0.0.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.cloud</groupId>
-      <artifactId>gapic-google-cloud-aiplatform-v1</artifactId>
-      <version>0.0.0-SNAPSHOT</version>
+      <version>${aiplatform.version}</version>
+      <scope>test</scope>
     </dependency>
 
     <!-- Test dependencies -->

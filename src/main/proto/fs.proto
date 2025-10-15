@@ -16,7 +16,7 @@
 syntax="proto3";
 package com.google.cloud.aiplatform.fs;
 
-import "google/cloud/aiplatform/v1beta1/featurestore_online_service.proto";
+import "google/cloud/aiplatform/v1/featurestore_online_service.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
 
@@ -27,7 +27,7 @@ message FeatureViewInternalStorage {
   message FeatureData {
     string name = 1;
 
-    repeated .google.cloud.aiplatform.v1beta1.FeatureValue values = 2;
+    repeated .google.cloud.aiplatform.v1.FeatureValue values = 2;
   }
 
   repeated FeatureData feature_data = 1;
