@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.google.cloud</groupId>
   <artifactId>google-cloud-aiplatform-fs</artifactId>
-  <version>3.78.0</version>
+  <version>0.1.0</version>
   <packaging>jar</packaging>
   <name>Google Cloud Vertex AI Custom SDK for Feature Store</name>
   <parent>
