@@ -18,7 +18,7 @@ If you're using Maven, add the following to your dependencies:
 <dependency>
   <groupId>com.google.cloud</groupId>
   <artifactId>google-cloud-aiplatform-fs</artifactId>
-  <version>3.78.0</version>
+  <version>0.1.0</version>
   <exclusions>
     <exclusion>
       <groupId>com.google.api.grpc</groupId>
