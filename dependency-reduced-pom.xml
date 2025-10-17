@@ -4,7 +4,7 @@
   <groupId>com.google.cloud</groupId>
   <artifactId>google-cloud-aiplatform-fs</artifactId>
   <name>Google Cloud Vertex AI Custom SDK for Feature Store</name>
-  <version>3.78.0</version>
+  <version>0.1.0</version>
   <description>Java client for Google Cloud Vertex AI services.</description>
   <url>https://github.com/googleapis/google-cloud-java</url>
   <issueManagement>
