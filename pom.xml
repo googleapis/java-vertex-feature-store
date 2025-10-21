@@ -92,6 +92,14 @@
   </dependencies>
 
   <build>
+      <extensions>
+        <!-- Extension to detect OS and architecture -->
+        <extension>
+            <groupId>kr.motd.maven</groupId>
+            <artifactId>os-maven-plugin</artifactId>
+            <version>1.7.1</version> <!-- Use a recent version -->
+        </extension>
+      </extensions>
     <plugins>
       <plugin>
         <!-- for loading fs.proto file -->
@@ -99,7 +107,7 @@
         <artifactId>protobuf-maven-plugin</artifactId>
         <version>0.6.1</version>
         <configuration>
-          <protocArtifact>com.google.protobuf:protoc:3.25.1:exe:osx-x86_64</protocArtifact>
+            <protocArtifact>com.google.protobuf:protoc:3.25.1:exe:${os.detected.classifier}</protocArtifact>
         </configuration>
         <executions>
           <execution>
