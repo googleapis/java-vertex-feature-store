@@ -25,6 +25,7 @@ import com.google.cloud.aiplatform.v1.FetchFeatureValuesRequest;
 import com.google.cloud.aiplatform.v1.FetchFeatureValuesResponse;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import io.grpc.Status.Code;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -97,6 +98,21 @@ public class FeatureOnlineStoreDirectClient {
           /* retryable= */ false);
     }
     return Converter.rowToResponse(row, internalRequest);
+  }
+
+  public List<FetchFeatureValuesResponse> batchFetchFeatureValues(List<FetchFeatureValuesRequest> requests) throws Exception {
+    for (FetchFeatureValuesRequest request : requests) {
+      if (request.getDataFormat().equals(FeatureViewDataFormat.PROTO_STRUCT)) {
+        throw new UnimplementedException(
+            new Throwable("PROTO_STRUCT is not supported yet for batch fetch"),
+            /* statusCode= */ GrpcStatusCode.of(Code.UNIMPLEMENTED),
+            /* retryable= */ false);
+      }
+    }
+
+    InternalFetchRequest internalRequest = new InternalFetchRequest(requests);
+    List<Row> rows = this.bigtableClientManager.getClient().batchFetchData(internalRequest);
+    return Converter.rowsToResponses(rows, internalRequest);
   }
 
   public void close() {

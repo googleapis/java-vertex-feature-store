@@ -29,6 +29,10 @@ import com.google.cloud.bigtable.data.v2.models.RowCell;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.Status;
 import io.grpc.Status.Code;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -162,5 +166,74 @@ public class Converter {
     // Processing KEY_VALUE request.
     responseBuilder.setKeyValues(internalStorageToKeyValuesList(cell, request));
     return responseBuilder.build();
+  }
+
+  /**
+   * Converts a list of Bigtable Rows to a list of FetchFeatureValuesResponse.
+   * The output list is ordered to match the keys in {@code request.dataKeys}.
+   *
+   * @param rows The list of Rows returned from Bigtable. These are only the rows that were found.
+   * @param request An {@link InternalFetchRequest} containing the ordered list of keys in {@code request.dataKeys}.
+   * @return A {@link List<FetchFeatureValuesResponse>} where each element corresponds to a key in {@code request.dataKeys}.
+   *         If a key was not found in Bigtable, the response for that key will contain an empty {@link FeatureNameValuePairList}.
+   * @throws UnimplementedException if {@code request.format} is PROTO_STRUCT.
+   * @throws InternalException if conversion of any *found* row fails due to unexpected data format,
+   *         propagating the underlying issue.
+   */
+  public static List<FetchFeatureValuesResponse> rowsToResponses(List<Row> rows, InternalFetchRequest request) throws Exception {
+    if (request.format == FeatureViewDataFormat.PROTO_STRUCT) {
+      throw new UnimplementedException(
+          new Throwable("PROTO_STRUCT is not supported for batch fetch"),
+          /* statusCode= */ GrpcStatusCode.of(Code.UNIMPLEMENTED),
+          /* retryable= */ false);
+    }
+
+    if (request.dataKeys == null || request.dataKeys.isEmpty()) {
+      return new ArrayList<>(); // Return empty list if no keys were requested.
+    }
+
+    // 1. Create a map for quick lookup of Rows by their key.
+    Map<String, Row> keyToRowMap = new HashMap<>();
+    for (Row row : rows) {
+      // Row.getKey() returns a ByteString, convert to String.
+      keyToRowMap.put(row.getKey().toStringUtf8(), row);
+    }
+
+    // 2. Build the ordered list of responses.
+    List<FetchFeatureValuesResponse> responses = new ArrayList<>(request.dataKeys.size());
+
+    // Iterate through the *ordered* requested keys from InternalFetchRequest.dataKeys.
+    for (String dataKey : request.dataKeys) {
+      Row foundRow = keyToRowMap.get(dataKey);
+      FetchFeatureValuesResponse response;
+
+      if (foundRow != null) {
+        // Key was found in Bigtable. Convert the Row to a FeatureViewCell and then to a Response.
+        try {
+          FeatureViewCell cell = rowToFeatureViewCell(foundRow, request);
+          response = FetchFeatureValuesResponse.newBuilder()
+              .setKeyValues(internalStorageToKeyValuesList(cell, request))
+              .build();
+        } catch (Exception e) {
+          // If conversion of a *found* row fails, it indicates an internal data issue.
+          // Following the pattern of rowToResponse, we throw an InternalException.
+          throw new InternalException(
+              new Throwable(String.format("Failed to convert Bigtable Row for key '%s': %s", dataKey, e.getMessage()), e),
+              /* statusCode= */ GrpcStatusCode.of(Status.Code.INTERNAL),
+              /* retryable= */ false);
+        }
+      } else {
+        // Key was not found in Bigtable. Create a response indicating this.
+        // For KEY_VALUE format, an empty FeatureNameValuePairList signifies that no features
+        // were found for the requested key.
+        response = FetchFeatureValuesResponse.newBuilder()
+            .setKeyValues(FeatureNameValuePairList.getDefaultInstance())
+            .build();
+        logger.log(Level.FINE, String.format("Entity id '%s' not found in Bigtable during batch fetch.", dataKey));
+      }
+      responses.add(response);
+    }
+
+    return responses;
   }
 }

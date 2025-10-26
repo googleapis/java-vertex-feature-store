@@ -16,12 +16,15 @@
 package com.google.cloud.aiplatform.fs;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import com.google.api.gax.retrying.RetrySettings;
+import com.google.api.gax.rpc.ServerStream;
 import com.google.cloud.aiplatform.fs.FeatureViewInternalStorage.FeatureData;
 import com.google.cloud.aiplatform.v1.FeatureOnlineStore;
 import com.google.cloud.aiplatform.v1.FeatureOnlineStore.Bigtable;
@@ -40,6 +43,7 @@ import com.google.cloud.aiplatform.v1.FetchFeatureValuesResponse.FeatureNameValu
 import com.google.cloud.aiplatform.v1.GenerateFetchAccessTokenResponse;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.models.Filters.Filter;
+import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowCell;
 import com.google.cloud.bigtable.data.v2.models.TableId;
@@ -48,6 +52,9 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.util.Timestamps;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -130,6 +137,27 @@ public final class FeatureOnlineStoreDirectClientTest {
       Row.create(
           ByteString.copyFromUtf8("key"),
           ImmutableList.of(SAMPLE_CELL_DEFAULT));
+
+  private static final FeatureViewInternalStorage SAMPLE_INTERNALSTORAGE_2 =
+      FeatureViewInternalStorage.newBuilder()
+          .setFeatureTimestamp(NOW)
+          .addFeatureData(FeatureData.newBuilder()
+              .setName("test")
+              .addValues(FeatureValue.newBuilder().setStringValue("sample feature value 2").build())
+              .build())
+          .build();
+
+  private static final RowCell SAMPLE_CELL_DEFAULT_2 = RowCell.create(
+      FV_ID,
+      ByteString.copyFromUtf8("default"),
+      1000000,
+      ImmutableList.of(),
+      SAMPLE_INTERNALSTORAGE_2.toByteString());
+
+  private static final Row SAMPLE_ROW_2 =
+      Row.create(
+          ByteString.copyFromUtf8("key_2"),
+          ImmutableList.of(SAMPLE_CELL_DEFAULT_2));
 
   @Mock
   private CloudBigtableCache mockBigtableCache;
@@ -220,6 +248,61 @@ public final class FeatureOnlineStoreDirectClientTest {
       Assert.fail("Exception should be thrown");
     } catch (Exception e) {
       // pass
+    }
+  }
+
+  @Test
+  public void batchFetchFeatureValues_keyValue_success() {
+    // Set the response for Bigtable.readRows API.
+    List<Row> expectedRows = Arrays.asList(SAMPLE_ROW, SAMPLE_ROW_2);
+    ServerStream<Row> mockRowStream = org.mockito.Mockito.mock(ServerStream.class);
+    org.mockito.Mockito.when(mockRowStream.iterator()).thenReturn(expectedRows.iterator());
+
+    // Stub the readRows method to return the mocked stream
+    when(mockBigtableClient.readRows(any(Query.class))).thenReturn(mockRowStream);
+
+    List<FetchFeatureValuesResponse> expectedResponses = new ArrayList<>();
+    expectedResponses.add(FetchFeatureValuesResponse.newBuilder()
+        .setKeyValues(
+            FeatureNameValuePairList.newBuilder()
+                .addFeatures(
+                    FeatureNameValuePair.newBuilder()
+                        .setName("test")
+                        .setValue(FeatureValue.newBuilder().setStringValue("sample feature value").build())
+                        .build())
+                .build())
+        .build());
+    expectedResponses.add(FetchFeatureValuesResponse.newBuilder()
+        .setKeyValues(
+            FeatureNameValuePairList.newBuilder()
+                .addFeatures(
+                    FeatureNameValuePair.newBuilder()
+                        .setName("test")
+                        .setValue(FeatureValue.newBuilder().setStringValue("sample feature value 2").build())
+                        .build())
+                .build())
+        .build());
+
+    try {
+      FeatureOnlineStoreDirectClient client =
+          FeatureOnlineStoreDirectClient.create(FV_NAME, "");
+
+      List<FetchFeatureValuesRequest> requests = new ArrayList<>();
+      requests.add(FetchFeatureValuesRequest.newBuilder()
+          .setFeatureView(FV_NAME)
+          .setDataFormat(FeatureViewDataFormat.KEY_VALUE)
+          .setDataKey(FeatureViewDataKey.newBuilder().setKey("key").build())
+          .build());
+      requests.add(FetchFeatureValuesRequest.newBuilder()
+          .setFeatureView(FV_NAME)
+          .setDataFormat(FeatureViewDataFormat.KEY_VALUE)
+          .setDataKey(FeatureViewDataKey.newBuilder().setKey("key_2").build())
+          .build());
+      // This code triggers loading cache from CloudBigtableCache and FeatureViewCache.
+      List<FetchFeatureValuesResponse> actualResponses = client.batchFetchFeatureValues(requests);
+      assertThat(actualResponses).containsExactlyElementsIn(expectedResponses).inOrder();
+    } catch (Exception e) {
+      Assert.fail(String.format("Exception should not be thrown but did. %s", e));
     }
   }
 
