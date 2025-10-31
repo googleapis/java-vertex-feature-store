@@ -18,17 +18,21 @@ package com.google.cloud.aiplatform.fs;
 import static com.google.cloud.bigtable.data.v2.models.Filters.FILTERS;
 
 import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.api.gax.rpc.ServerStream;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
 import com.google.cloud.bigtable.data.v2.models.Filters.Filter;
+import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.TableId;
 import com.google.cloud.bigtable.data.v2.stub.metrics.NoopMetricsProvider;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.VerifyException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -96,27 +100,61 @@ public class BigtableClient {
     this.bigtableDataClient.close();
   }
 
-  public Row fetchData(InternalFetchRequest request) throws Exception {
-    Filter filter = null;
+  private Filter buildFilter(InternalFetchRequest request) {
     if (request.featureViewSpec.continuousSyncEnabled) {
-      filter =
-          FILTERS
-              .chain()
-              .filter(FILTERS.family().regex(request.featureViewId))
-              .filter(FILTERS.limit().cellsPerColumn(1));
+      return FILTERS
+          .chain()
+          .filter(FILTERS.family().regex(request.featureViewId))
+          .filter(FILTERS.limit().cellsPerColumn(1));
     } else {
-      filter =
-          FILTERS
-              .chain()
-              .filter(
-                  FILTERS
-                      .qualifier()
-                      .rangeWithinFamily(request.featureViewId)
-                      .startClosed(defaultColumn)
-                      .endClosed(directWriteColumn))
-              .filter(FILTERS.limit().cellsPerColumn(1));
+      return FILTERS
+          .chain()
+          .filter(
+              FILTERS
+                  .qualifier()
+                  .rangeWithinFamily(request.featureViewId)
+                  .startClosed(defaultColumn)
+                  .endClosed(directWriteColumn))
+          .filter(FILTERS.limit().cellsPerColumn(1));
     }
+  }
+
+  public Row fetchData(InternalFetchRequest request) throws Exception {
+    Filter filter = buildFilter(request);
     return bigtableDataClient.readRow(
         TableId.of(request.cloudBigtableSpec.tableId), request.dataKey, filter);
+  }
+
+  /**
+   * Fetches multiple rows from Bigtable based on the provided InternalFetchRequest.
+   * This method assumes that {@code request.dataKeys} is populated.
+   *
+   * @param request An {@link InternalFetchRequest} with {@code dataKeys} set.
+   * @return A {@link List} of {@link Row} objects for the keys found in Bigtable. Keys not found
+   *     in Bigtable will not have corresponding entries in the returned list.
+   * @throws IllegalArgumentException if {@code request.dataKeys} is null or empty.
+   * @throws Exception for other underlying issues during the Bigtable read.
+   */
+  public List<Row> batchFetchData(InternalFetchRequest request) throws Exception {
+    if (request.dataKeys == null || request.dataKeys.isEmpty()) {
+      throw new IllegalArgumentException("batchFetchData requires InternalFetchRequest with populated dataKeys.");
+    }
+
+    Filter filter = buildFilter(request);
+    TableId tableId = TableId.of(request.cloudBigtableSpec.tableId);
+
+    Query query = Query.create(tableId);
+    for (String dataKey : request.dataKeys) {
+      query = query.rowKey(dataKey);
+    }
+    query = query.filter(filter);
+
+    ServerStream<Row> rowStream = bigtableDataClient.readRows(query);
+
+    List<Row> rows = new ArrayList<>();
+    for (Row row : rowStream) {
+      rows.add(row);
+    }
+    return rows;
   }
 }

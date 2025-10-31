@@ -20,12 +20,15 @@ import com.google.cloud.aiplatform.v1.FeatureViewDataKey;
 import com.google.cloud.aiplatform.v1.FeatureViewDataKey.CompositeKey;
 import com.google.cloud.aiplatform.v1.FeatureViewName;
 import com.google.cloud.aiplatform.v1.FetchFeatureValuesRequest;
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Timestamp;
 import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Internal fetch request class which bundles all the info needed to fetch feature values from
- * Bigtable.
+ * Bigtable. Supports both single and batch fetch.
  */
 public class InternalFetchRequest {
 
@@ -42,12 +45,19 @@ public class InternalFetchRequest {
   // server-side latency for Cloud monitoring.
   Timestamp arrivalTime;
 
-  // Entity id built from by single id or composite ids.
+  // Entity id built from by single id or composite ids. Used for single fetch.
+  // Will be null if dataKeys is used.
   String dataKey;
+
+  // Will be empty if dataKey is used.
+  ImmutableList<String> dataKeys;
 
   CloudBigtableSpec cloudBigtableSpec;
   FeatureViewSpec featureViewSpec;
 
+  /**
+   * Constructor for a single FetchFeatureValuesRequest.
+   */
   public InternalFetchRequest(FetchFeatureValuesRequest request) {
     FeatureViewName featureViewName = FeatureViewName.parse(request.getFeatureView());
     // projectId could be project number in String.
@@ -63,12 +73,76 @@ public class InternalFetchRequest {
         .setNanos(now.getNano())
         .build();
     this.dataKey = constructDataKey(request);
+    this.dataKeys = ImmutableList.of(); // Empty for single fetch
+
     String onlineStoreResourcePath =
         String.format(
             "projects/%s/locations/%s/featureOnlineStores/%s",
             projectId, location, onlineStoreId);
     this.cloudBigtableSpec = CloudBigtableCache.getInstance().getCloudBigtableSpec(onlineStoreResourcePath);
     this.featureViewSpec = FeatureViewCache.getInstance().getFeatureViewSpec(request.getFeatureView());
+  }
+
+  /**
+   * Constructor for a batch of FetchFeatureValuesRequests.
+   * Assumes all requests in the list target the same FeatureView and have the same DataFormat.
+   *
+   * @param requests A non-empty list of {@link FetchFeatureValuesRequest}.
+   * @throws IllegalArgumentException if the list is null or empty, or if requests
+   *         have different FeatureViews or DataFormats.
+   */
+  public InternalFetchRequest(List<FetchFeatureValuesRequest> requests) {
+    if (requests == null || requests.isEmpty()) {
+      throw new IllegalArgumentException("Batch fetch requests list cannot be null or empty.");
+    }
+
+    FetchFeatureValuesRequest firstRequest = requests.get(0);
+    FeatureViewName featureViewName = FeatureViewName.parse(firstRequest.getFeatureView());
+    this.projectId = featureViewName.getProject();
+    this.location = featureViewName.getLocation();
+    this.onlineStoreId = featureViewName.getFeatureOnlineStore();
+    this.featureViewId = featureViewName.getFeatureView();
+    // Assuming all requests have the same data format.
+    this.format = firstRequest.getDataFormat();
+    this.arrivalTime = now();
+    this.dataKey = null; // Null for batch fetch
+    // Construct data keys for each request in the batch.
+    this.dataKeys = requests.stream()
+        .map(InternalFetchRequest::constructDataKey)
+        .collect(ImmutableList.toImmutableList());
+
+    String onlineStoreResourcePath =
+        String.format(
+            "projects/%s/locations/%s/featureOnlineStores/%s",
+            projectId, location, onlineStoreId);
+    this.cloudBigtableSpec = CloudBigtableCache.getInstance().getCloudBigtableSpec(onlineStoreResourcePath);
+    // Assuming all requests have the same feature view spec.
+    this.featureViewSpec = FeatureViewCache.getInstance().getFeatureViewSpec(firstRequest.getFeatureView());
+
+    validateBatchRequests(requests, firstRequest);
+  }
+
+  private static Timestamp now() {
+    Instant now = Instant.now();
+    return Timestamp.newBuilder()
+        .setSeconds(now.getEpochSecond())
+        .setNanos(now.getNano())
+        .build();
+  }
+
+  private void validateBatchRequests(List<FetchFeatureValuesRequest> requests, FetchFeatureValuesRequest firstRequest) {
+    String firstFeatureView = firstRequest.getFeatureView();
+    for (int i = 1; i < requests.size(); i++) {
+      FetchFeatureValuesRequest currentRequest = requests.get(i);
+      if (!currentRequest.getDataFormat().equals(this.format)) {
+        throw new IllegalArgumentException(
+            String.format("All requests in a batch must have the same data format. Found different formats: %s and %s", this.format, currentRequest.getDataFormat()));
+      }
+      if (!currentRequest.getFeatureView().equals(firstFeatureView)) {
+        throw new IllegalArgumentException(
+            String.format("All requests in a batch must target the same FeatureView. Found different views: %s and %s", firstFeatureView, currentRequest.getFeatureView()));
+      }
+    }
   }
 
   protected static String constructDataKey(FetchFeatureValuesRequest request) {
@@ -101,7 +175,19 @@ public class InternalFetchRequest {
     this.featureViewId = builder.featureViewId;
     this.format = builder.format;
     this.arrivalTime = builder.arrivalTime;
+
+    // Ensure only one of dataKey or dataKeys is set.
+    boolean hasSingleKey = builder.dataKey != null;
+    ImmutableList<String> builtDataKeys = builder.dataKeysBuilder.build();
+    boolean hasBatchKeys = !builtDataKeys.isEmpty();
+
+    if (hasSingleKey && hasBatchKeys) {
+      throw new IllegalStateException("Cannot build InternalFetchRequest with both a single dataKey and a list of dataKeys. Use either dataKey() or dataKeys()/addAllDataKeys().");
+    }
+
     this.dataKey = builder.dataKey;
+    this.dataKeys = builtDataKeys;
+
     this.cloudBigtableSpec = builder.cloudBigtableSpec;
     this.featureViewSpec = builder.featureViewSpec;
   }
@@ -118,7 +204,10 @@ public class InternalFetchRequest {
     String featureViewId;
     FeatureViewDataFormat format;
     Timestamp arrivalTime;
+
+    // Supports setting either a single key or multiple keys.
     String dataKey;
+    private ImmutableList.Builder<String> dataKeysBuilder = ImmutableList.builder();
 
     CloudBigtableSpec cloudBigtableSpec;
     FeatureViewSpec featureViewSpec;
@@ -158,8 +247,42 @@ public class InternalFetchRequest {
       return this;
     }
 
+    /**
+     * Sets a single data key for the request. This will clear any previously added batch data keys.
+     */
     public Builder dataKey(String dataKey) {
       this.dataKey = dataKey;
+      // Clear dataKeysBuilder to ensure only one key type is active.
+      this.dataKeysBuilder = ImmutableList.builder();
+      return this;
+    }
+
+    /**
+     * NEW: Sets a list of data keys for a batch request. This will clear any previously set single data key.
+     * The provided list is defensively copied.
+     */
+    public Builder dataKeys(List<String> dataKeys) {
+      this.dataKeysBuilder = ImmutableList.<String>builder().addAll(dataKeys);
+      // Clear dataKey to ensure only one key type is active.
+      this.dataKey = null;
+      return this;
+    }
+
+    /**
+     * Adds a single data key to the batch. Implies a batch request.
+     */
+    public Builder addDataKey(String dataKey) {
+      this.dataKeysBuilder.add(dataKey);
+      this.dataKey = null; // Clear single key if batch keys are being added.
+      return this;
+    }
+
+    /**
+     * Adds multiple data keys from an Iterable to the batch. Implies a batch request.
+     */
+    public Builder addAllDataKeys(Iterable<String> dataKeys) {
+      this.dataKeysBuilder.addAll(dataKeys);
+      this.dataKey = null; // Clear single key if batch keys are being added.
       return this;
     }
 
