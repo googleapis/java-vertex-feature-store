@@ -17,7 +17,7 @@
   <properties>
     <skipUnitTests>false</skipUnitTests>
     <checkstyle.header.file>java.header</checkstyle.header.file>
-    <bigtable.version>2.67.1</bigtable.version>
+    <bigtable.version>2.68.0</bigtable.version>
     <aiplatform.version>3.79.0</aiplatform.version>
   </properties>
 
