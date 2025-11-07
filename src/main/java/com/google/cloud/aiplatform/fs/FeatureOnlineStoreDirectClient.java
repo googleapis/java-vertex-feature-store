@@ -50,24 +50,6 @@ public class FeatureOnlineStoreDirectClient {
     return new FeatureOnlineStoreDirectClient(featureViewResourceName, /* settings= */ Optional.empty());
   }
 
-  // Temporary function to connect to a specific internal Bigtable instance. This will be
-  // deprecated.
-  public static FeatureOnlineStoreDirectClient create(
-      String featureViewResourceName,
-      String projectId,
-      String instanceId,
-      String tableId,
-      String readAppProfileId,
-      Optional<DirectClientSettings> settings) throws Exception {
-    return new FeatureOnlineStoreDirectClient(
-        featureViewResourceName,
-        projectId,
-        instanceId,
-        tableId,
-        readAppProfileId,
-        settings);
-  }
-
   // Client library generates access token, and applies the DirectClientSettings to create
   // Bigtable connections.
   public static FeatureOnlineStoreDirectClient create(
@@ -96,35 +78,6 @@ public class FeatureOnlineStoreDirectClient {
     // Call GetFeatureOnlineStore and GetFeatureView APIs and save the metadata in cache.
     CloudBigtableSpec btSpec = CloudBigtableCache.getInstance().getCloudBigtableSpec(fosName);
     FeatureViewSpec fvSpec = FeatureViewCache.getInstance().getFeatureViewSpec(featureViewResourceName);
-    this.bigtableClientManager = new BigtableClientManager(btSpec, fvSpec, featureViewResourceName, locationId, settings);
-  }
-
-  FeatureOnlineStoreDirectClient(
-      String featureViewResourceName,
-      String projectId,
-      String instanceId,
-      String tableId,
-      String readAppProfileId,
-      Optional<DirectClientSettings> settings) throws Exception {
-    FeatureViewName featureViewName = FeatureViewName.parse(featureViewResourceName);
-    String projectIdOrNumber = featureViewName.getProject();
-    String locationId = featureViewName.getLocation();
-    String onlineStoreId = featureViewName.getFeatureOnlineStore();
-    String featureViewId = featureViewName.getFeatureView();
-    logger.log(
-        Level.INFO,
-        String.format(
-            "Initializing for: projectID %s, location %s, onlineStore %s, featureView %s",
-            projectIdOrNumber, locationId, onlineStoreId, featureViewId));
-    String fosName =
-        FeatureOnlineStoreName.newBuilder()
-            .setProject(projectIdOrNumber)
-            .setLocation(locationId)
-            .setFeatureOnlineStore(onlineStoreId)
-            .build().toString();
-    CloudBigtableSpec btSpec = new CloudBigtableSpec(projectId, instanceId, tableId);
-    // For specfic BT settings, treat other attributes as false by default.
-    FeatureViewSpec fvSpec = new FeatureViewSpec(false, readAppProfileId, false);
     this.bigtableClientManager = new BigtableClientManager(btSpec, fvSpec, featureViewResourceName, locationId, settings);
   }
 
@@ -158,28 +111,6 @@ public class FeatureOnlineStoreDirectClient {
     }
 
     InternalFetchRequest internalRequest = new InternalFetchRequest(requests);
-    List<Row> rows = this.bigtableClientManager.getClient().batchFetchData(internalRequest);
-    return Converter.rowsToResponses(rows, internalRequest);
-  }
-
-  // Temporary function to override the underlying Bigtable where features are fetched from. This
-  // will be deprecated.
-  public List<FetchFeatureValuesResponse> batchFetchFeatureValues(
-      List<FetchFeatureValuesRequest> requests,
-      String projectId,
-      String instanceId,
-      String tableId,
-      String readAppProfileId) throws Exception {
-    for (FetchFeatureValuesRequest request : requests) {
-      if (request.getDataFormat().equals(FeatureViewDataFormat.PROTO_STRUCT)) {
-        throw new UnimplementedException(
-            new Throwable("PROTO_STRUCT is not supported yet for batch fetch"),
-            /* statusCode= */ GrpcStatusCode.of(Code.UNIMPLEMENTED),
-            /* retryable= */ false);
-      }
-    }
-
-    InternalFetchRequest internalRequest = new InternalFetchRequest(requests, projectId, instanceId, tableId, readAppProfileId);
     List<Row> rows = this.bigtableClientManager.getClient().batchFetchData(internalRequest);
     return Converter.rowsToResponses(rows, internalRequest);
   }

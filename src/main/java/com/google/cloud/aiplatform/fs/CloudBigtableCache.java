@@ -19,7 +19,11 @@ import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.api.gax.rpc.NotFoundException;
 import com.google.api.gax.rpc.PermissionDeniedException;
+import com.google.cloud.aiplatform.fs.BigtableInternal;
 import com.google.cloud.aiplatform.v1.FeatureOnlineStore;
+import com.google.cloud.aiplatform.v1.FeatureOnlineStore.Bigtable;
+import com.google.protobuf.ExtensionRegistryLite;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.cloud.aiplatform.v1.FeatureOnlineStoreAdminServiceClient;
 import com.google.cloud.aiplatform.v1.FeatureOnlineStoreName;
 import com.google.cloud.aiplatform.v1.GetFeatureOnlineStoreRequest;
@@ -65,7 +69,13 @@ class CloudBigtableCache {
                   /* statusCode= */ GrpcStatusCode.of(Status.Code.INVALID_ARGUMENT),
                   /* retryable= */false);
             }
-            if (!fos.getBigtable().hasBigtableMetadata()) {
+            Bigtable bt = fos.getBigtable();
+            if (bt.hasBigtableMetadata()) {
+                return new CloudBigtableSpec(fos);
+            }
+            // Failover check in case of the filed number missmatch.
+            BigtableInternal internalBt = BigtableInternal.parseFrom(bt.toByteArray(), ExtensionRegistryLite.newInstance());
+            if (!internalBt.hasBigtableMetadata()) {
               throw new InvalidArgumentException(
                   new Throwable("Direct access to Bigtable is not enabled"),
                   /* statusCode= */ GrpcStatusCode.of(Status.Code.INVALID_ARGUMENT),
@@ -114,15 +124,21 @@ class CloudBigtableSpec {
   String instanceId;
   String tableId;
 
-  CloudBigtableSpec(String tenantProjectId, String instanceId, String tableId) {
-    this.tenantProjectId = tenantProjectId;
-    this.instanceId = instanceId;
-    this.tableId = tableId;
-  }
 
   CloudBigtableSpec(FeatureOnlineStore fos) {
-    this.tenantProjectId = fos.getBigtable().getBigtableMetadata().getTenantProjectId();
-    this.instanceId = fos.getBigtable().getBigtableMetadata().getInstanceId();
-    this.tableId = fos.getBigtable().getBigtableMetadata().getTableId();
+      Bigtable bt = fos.getBigtable();
+      if (bt.hasBigtableMetadata()) {
+          this.tenantProjectId = bt.getBigtableMetadata().getTenantProjectId();
+          this.instanceId = bt.getBigtableMetadata().getInstanceId();
+          this.tableId = bt.getBigtableMetadata().getTableId();
+          return;
+      }
+      // Failover check in case of field number mismatch.
+      try {
+          BigtableInternal internalBt = BigtableInternal.parseFrom(bt.toByteArray(), ExtensionRegistryLite.newInstance());
+          this.tenantProjectId = internalBt.getBigtableMetadata().getTenantProjectId();
+          this.instanceId = internalBt.getBigtableMetadata().getInstanceId();
+          this.tableId = internalBt.getBigtableMetadata().getTableId();
+      } catch (InvalidProtocolBufferException e) {}
   }
 }
