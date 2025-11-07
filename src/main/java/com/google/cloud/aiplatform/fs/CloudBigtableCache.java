@@ -114,6 +114,12 @@ class CloudBigtableSpec {
   String instanceId;
   String tableId;
 
+  CloudBigtableSpec(String tenantProjectId, String instanceId, String tableId) {
+    this.tenantProjectId = tenantProjectId;
+    this.instanceId = instanceId;
+    this.tableId = tableId;
+  }
+
   CloudBigtableSpec(FeatureOnlineStore fos) {
     this.tenantProjectId = fos.getBigtable().getBigtableMetadata().getTenantProjectId();
     this.instanceId = fos.getBigtable().getBigtableMetadata().getInstanceId();

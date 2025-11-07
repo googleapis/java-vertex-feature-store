@@ -122,6 +122,51 @@ public class InternalFetchRequest {
     validateBatchRequests(requests, firstRequest);
   }
 
+  /**
+   * Constructor for a batch of FetchFeatureValuesRequests overriding Bigtable params. Note: This is
+   * temporary and will be deprecated.
+   *
+   * Assumes all requests in the list target the same FeatureView and have the same DataFormat.
+   *
+   * @param requests A non-empty list of {@link FetchFeatureValuesRequest}.
+   * @throws IllegalArgumentException if the list is null or empty, or if requests
+   *         have different FeatureViews or DataFormats.
+   */
+  public InternalFetchRequest(
+      List<FetchFeatureValuesRequest> requests,
+      String projectId,
+      String instanceId,
+      String tableId,
+      String readAppProfileId) {
+    if (requests == null || requests.isEmpty()) {
+      throw new IllegalArgumentException("Batch fetch requests list cannot be null or empty.");
+    }
+
+    FetchFeatureValuesRequest firstRequest = requests.get(0);
+    FeatureViewName featureViewName = FeatureViewName.parse(firstRequest.getFeatureView());
+    this.projectId = featureViewName.getProject();
+    this.location = featureViewName.getLocation();
+    this.onlineStoreId = featureViewName.getFeatureOnlineStore();
+    this.featureViewId = featureViewName.getFeatureView();
+    // Assuming all requests have the same data format.
+    this.format = firstRequest.getDataFormat();
+    this.arrivalTime = now();
+    this.dataKey = null; // Null for batch fetch
+    // Construct data keys for each request in the batch.
+    this.dataKeys = requests.stream()
+        .map(InternalFetchRequest::constructDataKey)
+        .collect(ImmutableList.toImmutableList());
+
+    String onlineStoreResourcePath =
+        String.format(
+            "projects/%s/locations/%s/featureOnlineStores/%s",
+            projectId, location, onlineStoreId);
+    this.cloudBigtableSpec = new CloudBigtableSpec(projectId, instanceId, tableId);
+    this.featureViewSpec= new FeatureViewSpec(false, readAppProfileId, false);
+
+    validateBatchRequests(requests, firstRequest);
+  }
+
   private static Timestamp now() {
     Instant now = Instant.now();
     return Timestamp.newBuilder()

@@ -108,6 +108,12 @@ class FeatureViewSpec {
 
   Boolean timestampsEnabled;
 
+  FeatureViewSpec(boolean continuousSyncEnabled, String readAppProfileId, boolean timestampsEnabled) {
+    this.continuousSyncEnabled = continuousSyncEnabled;
+    this.readAppProfileId = readAppProfileId;
+    this.timestampsEnabled = timestampsEnabled;
+  }
+
   FeatureViewSpec(FeatureView fv) {
     this.continuousSyncEnabled = fv.getSyncConfig().getContinuous();
     this.readAppProfileId = fv.getBigtableMetadata().getReadAppProfile();
