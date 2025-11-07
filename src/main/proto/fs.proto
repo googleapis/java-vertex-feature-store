@@ -49,3 +49,264 @@ message FeatureViewCell {
   // StreamingFetchFeatureValues.
   string string_key = 3;
 }
+
+message BigtableInternal {
+  message AutoScaling {
+    int32 min_node_count = 1 ;
+
+    // Required. The maximum number of nodes to scale up to. Must be greater
+    // than or equal to min_node_count, and less than or equal to 10 times of
+    // 'min_node_count'.
+    int32 max_node_count = 2 ;
+
+    // Optional. A percentage of the cluster's CPU capacity. Can be from 10%
+    // to 80%. When a cluster's CPU utilization exceeds the target that you
+    // have set, Bigtable immediately adds nodes to the cluster. When CPU
+    // utilization is substantially lower than the target, Bigtable removes
+    // nodes. If not set will default to 50%.
+    int32 cpu_utilization_target = 3;
+
+  }
+
+    // Metadata of the Bigtable instance. This is used by direct read access to
+    // the Bigtable in tenant project.
+    message BigtableMetadata {
+      // Tenant project ID.
+      string tenant_project_id = 1;
+
+      // The Cloud Bigtable instance id.
+      string instance_id = 2;
+
+      // The Cloud Bigtable table id.
+      string table_id = 3;
+    }
+
+    // Required. Autoscaling config applied to Bigtable Instance.
+    AutoScaling auto_scaling = 1;
+    bool enable_direct_bigtable_access = 3;
+
+    // Output only. Metadata of the Bigtable instance. Output only.
+    BigtableMetadata bigtable_metadata = 4;
+}
+
+message FeatureViewInternal {
+
+  message BigQuerySource {
+  }
+
+  // Configuration for Sync. Only one option is set.
+  message SyncConfig {
+    // Cron schedule (https://en.wikipedia.org/wiki/Cron) to launch scheduled
+    // runs. To explicitly set a timezone to the cron tab, apply a prefix in
+    // the cron tab: "CRON_TZ=${IANA_TIME_ZONE}" or "TZ=${IANA_TIME_ZONE}".
+    // The ${IANA_TIME_ZONE} may only be a valid string from IANA time zone
+    // database. For example, "CRON_TZ=America/New_York 1 * * * *", or
+    // "TZ=America/New_York 1 * * * *".
+    string cron = 1;
+
+    // Optional. If true, syncs the FeatureView in a continuous manner to Online
+    // Store.
+    bool continuous = 2;
+  }
+
+  // Configuration for vector indexing.
+  message IndexConfig {
+    // Configuration options for using brute force search.
+    message BruteForceConfig {}
+
+    // Configuration options for the tree-AH algorithm.
+    message TreeAHConfig {
+    }
+
+    // The distance measure used in nearest neighbor search.
+    enum DistanceMeasureType {
+      // Should not be set.
+      DISTANCE_MEASURE_TYPE_UNSPECIFIED = 0;
+
+      // Euclidean (L_2) Distance.
+      SQUARED_L2_DISTANCE = 1;
+
+      // Cosine Distance. Defined as 1 - cosine similarity.
+      //
+      // We strongly suggest using DOT_PRODUCT_DISTANCE + UNIT_L2_NORM instead
+      // of COSINE distance. Our algorithms have been more optimized for
+      // DOT_PRODUCT distance which, when combined with UNIT_L2_NORM, is
+      // mathematically equivalent to COSINE distance and results in the same
+      // ranking.
+      COSINE_DISTANCE = 2;
+
+      // Dot Product Distance. Defined as a negative of the dot product.
+      DOT_PRODUCT_DISTANCE = 3;
+    }
+
+    // The configuration with regard to the algorithms used for efficient
+    // search.
+    oneof algorithm_config {
+      // Optional. Configuration options for the tree-AH algorithm (Shallow tree
+      // + Asymmetric Hashing). Please refer to this paper for more details:
+      // https://arxiv.org/abs/1908.10396
+      TreeAHConfig tree_ah_config = 6 ;
+
+      // Optional. Configuration options for using brute force search, which
+      // simply implements the standard linear search in the database for each
+      // query. It is primarily meant for benchmarking and to generate the
+      // ground truth for approximate search.
+      BruteForceConfig brute_force_config = 7;
+    }
+
+    // Optional. Column of embedding. This column contains the source data to
+    // create index for vector search. embedding_column must be set when using
+    // vector search.
+    string embedding_column = 1;
+
+    // Optional. Columns of features that're used to filter vector search
+    // results.
+    repeated string filter_columns = 2;
+
+    // Optional. Column of crowding. This column contains crowding attribute
+    // which is a constraint on a neighbor list produced by
+    // [FeatureOnlineStoreService.SearchNearestEntities][google.cloud.aiplatform.v1.FeatureOnlineStoreService.SearchNearestEntities]
+    // to diversify search results. If
+    // [NearestNeighborQuery.per_crowding_attribute_neighbor_count][google.cloud.aiplatform.v1.NearestNeighborQuery.per_crowding_attribute_neighbor_count]
+    // is set to K in
+    // [SearchNearestEntitiesRequest][google.cloud.aiplatform.v1.SearchNearestEntitiesRequest],
+    // it's guaranteed that no more than K entities of the same crowding
+    // attribute are returned in the response.
+    string crowding_column = 3;
+
+    // Optional. The number of dimensions of the input embedding.
+    optional int32 embedding_dimension = 4;
+
+    // Optional. The distance measure used in nearest neighbor search.
+    DistanceMeasureType distance_measure_type = 5;
+  }
+
+  // A Feature Registry source for features that need to be synced to Online
+  // Store.
+  message FeatureRegistrySource {
+    // Features belonging to a single feature group that will be
+    // synced to Online Store.
+    message FeatureGroup {
+      // Required. Identifier of the feature group.
+      string feature_group_id = 1;
+
+      // Required. Identifiers of features under the feature group.
+      repeated string feature_ids = 2;
+    }
+
+    // Required. List of features that need to be synced to Online Store.
+    repeated FeatureGroup feature_groups = 1;
+
+    // Optional. The project number of the parent project of the Feature Groups.
+    optional int64 project_number = 2;
+  }
+
+  // A Vertex Rag source for features that need to be synced to Online
+  // Store.
+  message VertexRagSource {
+  }
+
+  // Configuration for FeatureViews created in Optimized FeatureOnlineStore.
+  message OptimizedConfig {
+  }
+
+  // Service agent type used during data sync.
+  enum ServiceAgentType {
+    // By default, the project-level Vertex AI Service Agent is enabled.
+    SERVICE_AGENT_TYPE_UNSPECIFIED = 0;
+
+    // Indicates the project-level Vertex AI Service Agent
+    // (https://cloud.google.com/vertex-ai/docs/general/access-control#service-agents)
+    // will be used during sync jobs.
+    SERVICE_AGENT_TYPE_PROJECT = 1;
+
+    // Enable a FeatureView service account to be created by Vertex AI and
+    // output in the field `service_account_email`. This service account will
+    // be used to read from the source BigQuery table during sync.
+    SERVICE_AGENT_TYPE_FEATURE_VIEW = 2;
+  }
+
+  oneof source {
+    // Optional. Configures how data is supposed to be extracted from a BigQuery
+    // source to be loaded onto the FeatureOnlineStore.
+    BigQuerySource big_query_source = 6;
+
+    // Optional. Configures the features from a Feature Registry source that
+    // need to be loaded onto the FeatureOnlineStore.
+    FeatureRegistrySource feature_registry_source = 9;
+
+    // Optional. The Vertex RAG Source that the FeatureView is linked to.
+    VertexRagSource vertex_rag_source = 18;
+  }
+
+  // Identifier. Name of the FeatureView. Format:
+  // `projects/{project}/locations/{location}/featureOnlineStores/{feature_online_store}/featureViews/{feature_view}`
+  string name = 1 ;
+
+  // Output only. Timestamp when this FeatureView was created.
+  .google.protobuf.Timestamp create_time = 2;
+
+  // Output only. Timestamp when this FeatureView was last updated.
+  .google.protobuf.Timestamp update_time = 3;
+
+  // Optional. Used to perform consistent read-modify-write updates. If not set,
+  // a blind "overwrite" update happens.
+  string etag = 4 ;
+
+  // Optional. The labels with user-defined metadata to organize your
+  // FeatureViews.
+  //
+  // Label keys and values can be no longer than 64 characters
+  // (Unicode codepoints), can only contain lowercase letters, numeric
+  // characters, underscores and dashes. International characters are allowed.
+  //
+  // See https://goo.gl/xmQnxf for more information on and examples of labels.
+  // No more than 64 user labels can be associated with one
+  // FeatureOnlineStore(System labels are excluded)." System reserved label keys
+  // are prefixed with "aiplatform.googleapis.com/" and are immutable.
+  map<string, string> labels = 5 ;
+
+  // Configures when data is to be synced/updated for this FeatureView. At the
+  // end of the sync the latest featureValues for each entityId of this
+  // FeatureView are made ready for online serving.
+  SyncConfig sync_config = 7;
+
+  // Optional. Configuration for index preparation for vector search. It
+  // contains the required configurations to create an index from source data,
+  // so that approximate nearest neighbor (a.k.a ANN) algorithms search can be
+  // performed during online serving.
+  IndexConfig index_config = 15;
+
+  // Optional. Configuration for FeatureView created under Optimized
+  // FeatureOnlineStore.
+  OptimizedConfig optimized_config = 16;
+
+  // Optional. Service agent type used during data sync. By default, the Vertex
+  // AI Service Agent is used. When using an IAM Policy to isolate this
+  // FeatureView within a project, a separate service account should be
+  // provisioned by setting this field to `SERVICE_AGENT_TYPE_FEATURE_VIEW`.
+  // This will generate a separate service account to access the BigQuery source
+  // table.
+  ServiceAgentType service_agent_type = 14;
+
+  // Output only. A Service Account unique to this FeatureView. The role
+  // bigquery.dataViewer should be granted to this service account to allow
+  // Vertex AI Feature Store to sync data to the online store.
+  string service_account_email = 13;
+
+  // Output only. Reserved for future use.
+  bool satisfies_pzs = 19;
+
+  // Output only. Reserved for future use.
+  bool satisfies_pzi = 20;
+
+  // Metadata for the Cloud Bigtable that supports directly interacting Bigtable
+  // instances.
+  message BigtableMetadata {
+    // The Bigtable App Profile to use for reading from Bigtable.
+    string read_app_profile = 1;
+  }
+
+  // Metadata containing information about the Cloud Bigtable.
+  BigtableMetadata bigtable_metadata = 22;
+}
