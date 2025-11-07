@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.2.0](https://github.com/googleapis/java-vertex-feature-store/compare/v0.1.0...v0.2.0) (2025-11-07)
+
+
+### Features
+
+* Add batch fetch API ([04d06aa](https://github.com/googleapis/java-vertex-feature-store/commit/04d06aa9d0d60225352052282ae6f30210e93fd5))
+
+
+### Bug Fixes
+
+* **deps:** update aiplatform.version to v3.79.0 ([3725e06](https://github.com/googleapis/java-vertex-feature-store/commit/3725e06590901eba214abe4f48f3887bccb97005))
+* **deps:** update aiplatform.version to v3.79.0 ([b397bd8](https://github.com/googleapis/java-vertex-feature-store/commit/b397bd8040080608c0afc07b4fb032b85d76e435))
+* **deps:** update dependency com.google.cloud:google-cloud-aiplatform-parent to v3.79.0 ([3cb5aa9](https://github.com/googleapis/java-vertex-feature-store/commit/3cb5aa9448e512ba4ca31f57f5cf8fb8eb82abc9))
+* **deps:** update dependency com.google.cloud:google-cloud-aiplatform-parent to v3.79.0 ([91c4f5d](https://github.com/googleapis/java-vertex-feature-store/commit/91c4f5d82e0f339fc72737f2230ee8e40f1438ad))
+* **deps:** update dependency com.google.cloud:google-cloud-bigtable to v2.68.0 ([7ec26ae](https://github.com/googleapis/java-vertex-feature-store/commit/7ec26ae892f74339e4dfdef5756594aa029c6983))
+* **deps:** update dependency com.google.cloud:google-cloud-bigtable to v2.68.0 ([b03cb3a](https://github.com/googleapis/java-vertex-feature-store/commit/b03cb3a51ed78f2cf8a336fa5b6ba92dee84a028))
+* temporary fix for the field number mismatch ([75956ee](https://github.com/googleapis/java-vertex-feature-store/commit/75956eea9ad86efe1700718facf3e1b931efcbe2))
+* temporary fix for the field number mismatch ([da48ad6](https://github.com/googleapis/java-vertex-feature-store/commit/da48ad6de0af668585878a3f42d8d4f1fa31e646))
+* Temporary workaround for batch fetch ([218fbcf](https://github.com/googleapis/java-vertex-feature-store/commit/218fbcf54916d1558b471b547a79db2323d2c768))
+* Temporary workaround for batch fetch ([218fbcf](https://github.com/googleapis/java-vertex-feature-store/commit/218fbcf54916d1558b471b547a79db2323d2c768))
+* Temporary workaround for batch fetch ([a9a4b39](https://github.com/googleapis/java-vertex-feature-store/commit/a9a4b3965136f3679bce9ee4ff399e70e276232a))
+
 ## 0.1.0 (2025-10-21)
 
 
