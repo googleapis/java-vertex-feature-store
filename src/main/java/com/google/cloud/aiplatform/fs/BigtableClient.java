@@ -32,8 +32,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.VerifyException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * A client to interact with Bigtable.
@@ -144,7 +146,9 @@ public class BigtableClient {
     TableId tableId = TableId.of(request.cloudBigtableSpec.tableId);
 
     Query query = Query.create(tableId);
-    for (String dataKey : request.dataKeys) {
+    // Assuming request.dataKeys contains unique keys
+    Set<String> uniqueDataKeys = new HashSet<>(request.dataKeys);
+    for (String dataKey : uniqueDataKeys) {
       query = query.rowKey(dataKey);
     }
     query = query.filter(filter);
@@ -152,9 +156,22 @@ public class BigtableClient {
     ServerStream<Row> rowStream = bigtableDataClient.readRows(query);
 
     List<Row> rows = new ArrayList<>();
-    for (Row row : rowStream) {
-      rows.add(row);
+    Set<String> receivedKeys = new HashSet<>();
+    int expectedKeyCount = uniqueDataKeys.size();
+
+    try {
+      for (Row row : rowStream) {
+        rows.add(row);
+        receivedKeys.add(row.getKey().toStringUtf8());
+
+        // Optimization: Exit loop if all expected unique keys have been received.
+        if (receivedKeys.size() >= expectedKeyCount) {
+          break;
+        }
+      }
+    } finally {
     }
+
     return rows;
   }
 }
