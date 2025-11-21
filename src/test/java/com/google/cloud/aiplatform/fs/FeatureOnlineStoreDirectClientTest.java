@@ -55,6 +55,8 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -174,11 +176,11 @@ public final class FeatureOnlineStoreDirectClientTest {
   public void setup() throws Exception {
     PowerMockito.mockStatic(CloudBigtableCache.class);
     mockBigtableCache = mock(CloudBigtableCache.class);
-    when(CloudBigtableCache.getInstance()).thenReturn(mockBigtableCache);
+    when(CloudBigtableCache.getInstance(Optional.empty())).thenReturn(mockBigtableCache);
 
     PowerMockito.mockStatic(FeatureViewCache.class);
     mockFeatureViewCache = mock(FeatureViewCache.class);
-    when(FeatureViewCache.getInstance()).thenReturn(mockFeatureViewCache);
+    when(FeatureViewCache.getInstance(Optional.empty())).thenReturn(mockFeatureViewCache);
 
     PowerMockito.mockStatic(BigtableDataClient.class);
     mockBigtableClient = mock(BigtableDataClient.class);

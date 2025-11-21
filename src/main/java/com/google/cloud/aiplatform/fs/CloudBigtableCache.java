@@ -15,6 +15,7 @@
  */
 package com.google.cloud.aiplatform.fs;
 
+import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.api.gax.rpc.NotFoundException;
@@ -31,6 +32,8 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import io.grpc.Status;
+
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,7 +42,7 @@ import java.util.logging.Logger;
  */
 class CloudBigtableCache {
   // Singleton cache, shared across all threads in Java.
-  private static final CloudBigtableCache BIGTABLE_CACHE = new CloudBigtableCache();
+  private static volatile CloudBigtableCache BIGTABLE_CACHE;
 
   private final LoadingCache<String, CloudBigtableSpec> cache;
   private final FeatureOnlineStoreAdminServiceClientFactory clientFactory;
@@ -48,6 +51,11 @@ class CloudBigtableCache {
   private CloudBigtableCache() {
     this(new DefaultFeatureOnlineStoreAdminServiceClientFactory());
   }
+
+    // Default constructor to uses the real admin service client.
+    private CloudBigtableCache(CredentialsProvider credentialsProvider) {
+        this(new DefaultFeatureOnlineStoreAdminServiceClientFactory(credentialsProvider));
+    }
 
   CloudBigtableCache(FeatureOnlineStoreAdminServiceClientFactory clientFactory) {
     this.clientFactory = clientFactory;
@@ -108,9 +116,21 @@ class CloudBigtableCache {
     }
   }
 
-  public static CloudBigtableCache getInstance() {
-    return BIGTABLE_CACHE;
-  }
+   public static CloudBigtableCache getInstance(Optional<CredentialsProvider> credentialsProvider) {
+      if(BIGTABLE_CACHE == null){
+          synchronized (CloudBigtableCache.class) {
+              if (BIGTABLE_CACHE == null) {
+                  if (credentialsProvider!= null && credentialsProvider.isPresent()) {
+                      Logger.getLogger(CloudBigtableCache.class.getName()).log(Level.FINE, String.format("Creating CloudBigtableCache with provided CredentialsProvider"));
+                      BIGTABLE_CACHE = new CloudBigtableCache(credentialsProvider.get());
+                  } else {
+                      BIGTABLE_CACHE = new CloudBigtableCache();
+                  }
+              }
+          }
+      }
+      return BIGTABLE_CACHE;
+    }
 
   public void clear() {
     cache.invalidateAll();

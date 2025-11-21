@@ -15,6 +15,7 @@
  */
 package com.google.cloud.aiplatform.fs;
 
+import com.google.api.gax.core.CredentialsProvider;
 import com.google.cloud.aiplatform.v1.FeatureOnlineStoreAdminServiceClient;
 import com.google.cloud.aiplatform.v1.FeatureOnlineStoreAdminServiceSettings;
 import java.io.IOException;
@@ -33,10 +34,27 @@ interface FeatureOnlineStoreAdminServiceClientFactory {
 // admin endpoint.
 class DefaultFeatureOnlineStoreAdminServiceClientFactory implements FeatureOnlineStoreAdminServiceClientFactory {
   Logger logger = Logger.getLogger(DefaultFeatureOnlineStoreAdminServiceClientFactory.class.getName());
+    private final CredentialsProvider credentialsProvider;
 
+    public DefaultFeatureOnlineStoreAdminServiceClientFactory() {
+        this.credentialsProvider = null;
+    }
+
+    public DefaultFeatureOnlineStoreAdminServiceClientFactory(CredentialsProvider credentialsProvider) {
+        this.credentialsProvider = credentialsProvider;
+    }
   @Override
   public FeatureOnlineStoreAdminServiceClient createClient(String region) throws IOException {
     String regionalEndpoint = String.format("%s-%s", region, ENDPOINT);
+    if (this.credentialsProvider != null) {
+        FeatureOnlineStoreAdminServiceSettings settings =
+            FeatureOnlineStoreAdminServiceSettings.newBuilder()
+                .setCredentialsProvider(this.credentialsProvider)
+                .setEndpoint(regionalEndpoint)
+                .build();
+        logger.log(Level.INFO, String.format("Connecting to: %s", regionalEndpoint));
+        return FeatureOnlineStoreAdminServiceClient.create(settings);
+    }
     FeatureOnlineStoreAdminServiceSettings settings =
         FeatureOnlineStoreAdminServiceSettings.newBuilder().setEndpoint(regionalEndpoint).build();
     logger.log(Level.INFO, String.format("Connecting to: %s", regionalEndpoint));

@@ -15,6 +15,7 @@
  */
 package com.google.cloud.aiplatform.fs;
 
+import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.api.gax.rpc.NotFoundException;
@@ -30,6 +31,8 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import io.grpc.Status;
+
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,7 +42,7 @@ import java.util.logging.Logger;
 public final class FeatureViewCache {
 
   // Singleton cache, shared across all threads in Java.
-  private static final FeatureViewCache FEATURE_VIEW_CACHE = new FeatureViewCache();
+  private static volatile FeatureViewCache FEATURE_VIEW_CACHE;
 
   private final LoadingCache<String, FeatureViewSpec> cache;
 
@@ -49,6 +52,11 @@ public final class FeatureViewCache {
   private FeatureViewCache() {
     this(new DefaultFeatureOnlineStoreAdminServiceClientFactory());
   }
+
+    // Default constructor to uses the real admin service client.
+    private FeatureViewCache(CredentialsProvider credentialsProvider) {
+        this(new DefaultFeatureOnlineStoreAdminServiceClientFactory(credentialsProvider));
+    }
 
   FeatureViewCache(FeatureOnlineStoreAdminServiceClientFactory clientFactory) {
     this.clientFactory = clientFactory;
@@ -100,10 +108,20 @@ public final class FeatureViewCache {
     }
   }
 
-  public static FeatureViewCache getInstance() {
-    return FEATURE_VIEW_CACHE;
-  }
-
+    public static FeatureViewCache getInstance(Optional<CredentialsProvider> credentialsProvider) {
+        if(FEATURE_VIEW_CACHE == null){
+            synchronized (CloudBigtableCache.class) {
+                if (FEATURE_VIEW_CACHE == null) {
+                    if (credentialsProvider.isPresent()) {
+                        FEATURE_VIEW_CACHE = new FeatureViewCache(credentialsProvider.get());
+                    } else {
+                        FEATURE_VIEW_CACHE = new FeatureViewCache();
+                    }
+                }
+            }
+        }
+        return FEATURE_VIEW_CACHE;
+    }
   public void clear() {
     cache.invalidateAll();
   }

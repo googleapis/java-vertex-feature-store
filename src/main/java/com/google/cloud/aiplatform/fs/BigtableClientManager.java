@@ -97,10 +97,21 @@ public class BigtableClientManager {
 
   private String generateAccessToken() throws Exception {
     String endpoint = String.format("%s-aiplatform.googleapis.com:443", location);
-    FeatureOnlineStoreServiceSettings setting = FeatureOnlineStoreServiceSettings
-        .newBuilder()
-        .setEndpoint(endpoint)
-        .build();
+      FeatureOnlineStoreServiceSettings setting;
+    if (this.settings.isPresent() && this.settings.get().getCredentialsProvider() != null) {
+        logger.log(Level.FINE, "Using provided CredentialsProvider to generate access token.");
+        setting = FeatureOnlineStoreServiceSettings
+                .newBuilder()
+                .setEndpoint(endpoint)
+                .setCredentialsProvider(this.settings.get().getCredentialsProvider())
+                .build();
+    } else {
+        logger.log(Level.FINE, "Using default CredentialsProvider to generate access token.");
+        setting = FeatureOnlineStoreServiceSettings
+                .newBuilder()
+                .setEndpoint(endpoint)
+                .build();
+    }
     FeatureOnlineStoreServiceClient onlineServiceClient = FeatureOnlineStoreServiceClient.create(setting);
     GenerateFetchAccessTokenRequest request =
         GenerateFetchAccessTokenRequest.newBuilder()

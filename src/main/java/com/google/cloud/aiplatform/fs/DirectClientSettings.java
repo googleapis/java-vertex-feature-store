@@ -15,10 +15,12 @@
  */
 package com.google.cloud.aiplatform.fs;
 
+import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.grpc.ChannelPoolSettings;
 import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.StatusCode.Code;
 import com.google.api.gax.rpc.UnaryCallSettings;
+import com.google.auth.Credentials;
 import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
@@ -31,16 +33,22 @@ public class DirectClientSettings {
  private ChannelPoolSettings channelPoolSettings;
   private RetrySettings retrySettings;
   private Code[] retryables;
+  private CredentialsProvider credentialsProvider;
 
   public DirectClientSettings(Builder builder) {
     this.channelPoolSettings = builder.channelPoolSettings;
     this.retrySettings = builder.retrySettings;
     this.retryables = builder.retryables;
+    this.credentialsProvider = builder.credentialsProvider;
   }
 
   // Build a BigtableDataSettings.Builder by applying all the provided configs.
   public BigtableDataSettings.Builder toBigtableSettingsBuilder() {
     BigtableDataSettings.Builder builder = BigtableDataSettings.newBuilder();
+
+    if(credentialsProvider != null){
+        builder.setCredentialsProvider(credentialsProvider);
+    }
 
     if (channelPoolSettings != null) {
       builder
@@ -65,10 +73,15 @@ public class DirectClientSettings {
     return builder;
   }
 
+    public  CredentialsProvider getCredentialsProvider(){
+        return this.credentialsProvider;
+    }
+
   public static class Builder {
    private ChannelPoolSettings channelPoolSettings;
     private RetrySettings retrySettings;
     private Code[] retryables;
+      private CredentialsProvider credentialsProvider;
 
     public Builder setChannelPoolSettings(ChannelPoolSettings channelPoolSettings) {
       this.channelPoolSettings = channelPoolSettings;
@@ -83,6 +96,11 @@ public class DirectClientSettings {
     public Builder setRetryableCodes(Code... codes) {
       this.retryables = codes;
       return this;
+    }
+
+    public  Builder setCredentialsProvider(CredentialsProvider credentialsProvider){
+        this.credentialsProvider = credentialsProvider;
+        return this;
     }
 
     public DirectClientSettings build() {
