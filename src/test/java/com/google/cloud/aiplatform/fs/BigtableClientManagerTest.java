@@ -21,6 +21,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
+import com.google.api.gax.core.CredentialsProvider;
+import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.api.gax.rpc.NotFoundException;
 import com.google.api.gax.rpc.PermissionDeniedException;
 import com.google.api.gax.rpc.StatusCode;
@@ -35,6 +37,10 @@ import com.google.cloud.aiplatform.v1.FeatureView;
 import com.google.cloud.aiplatform.v1.GenerateFetchAccessTokenResponse;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
+import com.google.auth.Credentials;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
+import java.util.Date;
 import java.util.Optional;
 import org.junit.Assert;
 import org.junit.Before;
@@ -179,5 +185,101 @@ public class BigtableClientManagerTest {
         return null;
       }
     };
+  }
+
+  @Test
+  public void createBigtableClient_withCustomCredentialsProvider() throws Exception {
+    // Prepare - create custom credentials provider
+    Credentials mockCredentials = GoogleCredentials.create(
+        new AccessToken("custom-test-token", new Date(System.currentTimeMillis() + 3600000)));
+    CredentialsProvider customCredentialsProvider = FixedCredentialsProvider.create(mockCredentials);
+
+    DirectClientSettings customSettings = new DirectClientSettings.Builder()
+        .setCredentialsProvider(customCredentialsProvider)
+        .build();
+
+    ArgumentCaptor<BigtableDataSettings> clientSetting = forClass(BigtableDataSettings.class);
+    ArgumentCaptor<FeatureOnlineStoreServiceSettings> serviceSetting =
+        forClass(FeatureOnlineStoreServiceSettings.class);
+
+    CloudBigtableSpec bigtableSpec = new CloudBigtableSpec(BIGTABLE_FEATURE_ONLINE_STORE);
+    FeatureViewSpec featureViewSpec = new FeatureViewSpec(DEFAULT_BIGTABLE_FEATURE_VIEW);
+
+    when(BigtableDataClient.create(clientSetting.capture())).thenReturn(mockBigtableClient);
+
+    // Mock the FeatureOnlineStoreServiceClient.create to capture settings
+    PowerMockito.mockStatic(FeatureOnlineStoreServiceClient.class);
+    when(FeatureOnlineStoreServiceClient.create(serviceSetting.capture()))
+        .thenReturn(mockOnlineStoreServiceClient);
+
+    when(mockOnlineStoreServiceClient.generateFetchAccessToken(any()))
+        .thenReturn(ACCESS_TOKEN_RESPONSE);
+
+    // Execute - create BigtableClientManager with custom credentials
+    new BigtableClientManager(bigtableSpec, featureViewSpec, FV_NAME, LOCATION,
+        Optional.of(customSettings));
+
+    // Verify that custom credentials provider is used in the service settings
+    FeatureOnlineStoreServiceSettings capturedSettings = serviceSetting.getValue();
+    assertThat(capturedSettings.getCredentialsProvider()).isEqualTo(customCredentialsProvider);
+  }
+
+  @Test
+  public void createBigtableClient_withDefaultCredentialsProvider() throws Exception {
+    // Prepare - no custom credentials provider
+    ArgumentCaptor<BigtableDataSettings> clientSetting = forClass(BigtableDataSettings.class);
+    ArgumentCaptor<FeatureOnlineStoreServiceSettings> serviceSetting =
+        forClass(FeatureOnlineStoreServiceSettings.class);
+
+    CloudBigtableSpec bigtableSpec = new CloudBigtableSpec(BIGTABLE_FEATURE_ONLINE_STORE);
+    FeatureViewSpec featureViewSpec = new FeatureViewSpec(DEFAULT_BIGTABLE_FEATURE_VIEW);
+
+    when(BigtableDataClient.create(clientSetting.capture())).thenReturn(mockBigtableClient);
+
+    // Mock the FeatureOnlineStoreServiceClient.create to capture settings
+    PowerMockito.mockStatic(FeatureOnlineStoreServiceClient.class);
+    when(FeatureOnlineStoreServiceClient.create(serviceSetting.capture()))
+        .thenReturn(mockOnlineStoreServiceClient);
+
+    when(mockOnlineStoreServiceClient.generateFetchAccessToken(any()))
+        .thenReturn(ACCESS_TOKEN_RESPONSE);
+
+    // Execute - create BigtableClientManager without custom credentials (uses default)
+    new BigtableClientManager(bigtableSpec, featureViewSpec, FV_NAME, LOCATION, Optional.empty());
+
+    // Verify that default credentials provider is used (captured settings should have default)
+    FeatureOnlineStoreServiceSettings capturedSettings = serviceSetting.getValue();
+    // Default credentials provider should be set by the builder
+    assertThat(capturedSettings.getCredentialsProvider()).isNotNull();
+  }
+
+  @Test
+  public void createBigtableClient_withNullCredentialsProviderInSettings() throws Exception {
+    // Prepare - DirectClientSettings with null credentials provider
+    DirectClientSettings settingsWithNullCreds = new DirectClientSettings.Builder().build();
+
+    ArgumentCaptor<BigtableDataSettings> clientSetting = forClass(BigtableDataSettings.class);
+    ArgumentCaptor<FeatureOnlineStoreServiceSettings> serviceSetting =
+        forClass(FeatureOnlineStoreServiceSettings.class);
+
+    CloudBigtableSpec bigtableSpec = new CloudBigtableSpec(BIGTABLE_FEATURE_ONLINE_STORE);
+    FeatureViewSpec featureViewSpec = new FeatureViewSpec(DEFAULT_BIGTABLE_FEATURE_VIEW);
+
+    when(BigtableDataClient.create(clientSetting.capture())).thenReturn(mockBigtableClient);
+
+    PowerMockito.mockStatic(FeatureOnlineStoreServiceClient.class);
+    when(FeatureOnlineStoreServiceClient.create(serviceSetting.capture()))
+        .thenReturn(mockOnlineStoreServiceClient);
+
+    when(mockOnlineStoreServiceClient.generateFetchAccessToken(any()))
+        .thenReturn(ACCESS_TOKEN_RESPONSE);
+
+    // Execute - settings provided but credentials provider is null
+    new BigtableClientManager(bigtableSpec, featureViewSpec, FV_NAME, LOCATION,
+        Optional.of(settingsWithNullCreds));
+
+    // Verify that default credentials provider is used when settings has null credentials
+    FeatureOnlineStoreServiceSettings capturedSettings = serviceSetting.getValue();
+    assertThat(capturedSettings.getCredentialsProvider()).isNotNull();
   }
 }

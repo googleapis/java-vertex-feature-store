@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -79,8 +80,8 @@ public class InternalFetchRequest {
         String.format(
             "projects/%s/locations/%s/featureOnlineStores/%s",
             projectId, location, onlineStoreId);
-    this.cloudBigtableSpec = CloudBigtableCache.getInstance().getCloudBigtableSpec(onlineStoreResourcePath);
-    this.featureViewSpec = FeatureViewCache.getInstance().getFeatureViewSpec(request.getFeatureView());
+    this.cloudBigtableSpec = CloudBigtableCache.getInstance(Optional.empty()).getCloudBigtableSpec(onlineStoreResourcePath);
+    this.featureViewSpec = FeatureViewCache.getInstance(Optional.empty()).getFeatureViewSpec(request.getFeatureView());
   }
 
   /**
@@ -115,9 +116,9 @@ public class InternalFetchRequest {
         String.format(
             "projects/%s/locations/%s/featureOnlineStores/%s",
             projectId, location, onlineStoreId);
-    this.cloudBigtableSpec = CloudBigtableCache.getInstance().getCloudBigtableSpec(onlineStoreResourcePath);
+    this.cloudBigtableSpec = CloudBigtableCache.getInstance(Optional.empty()).getCloudBigtableSpec(onlineStoreResourcePath);
     // Assuming all requests have the same feature view spec.
-    this.featureViewSpec = FeatureViewCache.getInstance().getFeatureViewSpec(firstRequest.getFeatureView());
+    this.featureViewSpec = FeatureViewCache.getInstance(Optional.empty()).getFeatureViewSpec(firstRequest.getFeatureView());
 
     validateBatchRequests(requests, firstRequest);
   }

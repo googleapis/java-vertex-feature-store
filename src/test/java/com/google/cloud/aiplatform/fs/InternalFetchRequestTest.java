@@ -44,6 +44,8 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.util.Optional;
+
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({CloudBigtableCache.class,FeatureViewCache.class})
 public final class InternalFetchRequestTest {
@@ -92,11 +94,11 @@ public final class InternalFetchRequestTest {
   public void setup() {
     PowerMockito.mockStatic(CloudBigtableCache.class);
     mockBigtableCache = mock(CloudBigtableCache.class);
-    when(CloudBigtableCache.getInstance()).thenReturn(mockBigtableCache);
+    when(CloudBigtableCache.getInstance(Optional.empty())).thenReturn(mockBigtableCache);
 
     PowerMockito.mockStatic(FeatureViewCache.class);
     mockFeatureViewCache = mock(FeatureViewCache.class);
-    when(FeatureViewCache.getInstance()).thenReturn(mockFeatureViewCache);
+    when(FeatureViewCache.getInstance(Optional.empty())).thenReturn(mockFeatureViewCache);
   }
 
   @Test
