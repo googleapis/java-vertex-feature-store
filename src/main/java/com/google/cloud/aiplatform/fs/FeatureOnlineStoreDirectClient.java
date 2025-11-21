@@ -58,7 +58,6 @@ public class FeatureOnlineStoreDirectClient {
     return new FeatureOnlineStoreDirectClient(featureViewResourceName, Optional.of(settings));
   }
 
-
   FeatureOnlineStoreDirectClient(String featureViewResourceName, Optional<DirectClientSettings> settings) throws Exception {
     FeatureViewName featureViewName = FeatureViewName.parse(featureViewResourceName);
     String projectIdOrNumber = featureViewName.getProject();
