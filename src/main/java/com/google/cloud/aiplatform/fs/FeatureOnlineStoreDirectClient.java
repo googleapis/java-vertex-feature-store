@@ -17,6 +17,7 @@ package com.google.cloud.aiplatform.fs;
 
 import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.api.gax.rpc.NotFoundException;
+import com.google.api.gax.rpc.ServerStream;
 import com.google.api.gax.rpc.UnimplementedException;
 import com.google.cloud.aiplatform.v1.FeatureOnlineStoreName;
 import com.google.cloud.aiplatform.v1.FeatureViewDataFormat;
@@ -76,8 +77,8 @@ public class FeatureOnlineStoreDirectClient {
             .setFeatureOnlineStore(onlineStoreId)
             .build().toString();
     // Call GetFeatureOnlineStore and GetFeatureView APIs and save the metadata in cache.
-    CloudBigtableSpec btSpec = CloudBigtableCache.getInstance().getCloudBigtableSpec(fosName);
-    FeatureViewSpec fvSpec = FeatureViewCache.getInstance().getFeatureViewSpec(featureViewResourceName);
+    CloudBigtableSpec btSpec = CloudBigtableCache.getInstance(settings.map(DirectClientSettings::getCredentialsProvider)).getCloudBigtableSpec(fosName);
+    FeatureViewSpec fvSpec = FeatureViewCache.getInstance(settings.map(DirectClientSettings::getCredentialsProvider)).getFeatureViewSpec(featureViewResourceName);
     this.bigtableClientManager = new BigtableClientManager(btSpec, fvSpec, featureViewResourceName, locationId, settings);
   }
 
