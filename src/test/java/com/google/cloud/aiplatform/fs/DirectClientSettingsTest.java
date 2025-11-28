@@ -17,6 +17,8 @@ package com.google.cloud.aiplatform.fs;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.api.gax.core.CredentialsProvider;
+import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.api.gax.grpc.ChannelPoolSettings;
 import com.google.api.gax.grpc.InstantiatingGrpcChannelProvider;
 import com.google.api.gax.retrying.RetrySettings;
@@ -25,7 +27,11 @@ import com.google.api.gax.rpc.StatusCode.Code;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
 import com.google.cloud.bigtable.data.v2.stub.EnhancedBigtableStubSettings;
+import com.google.auth.Credentials;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
 import java.time.Duration;
+import java.util.Date;
 import java.util.Set;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -153,5 +159,63 @@ public class DirectClientSettingsTest {
     assertThat(actualCodes)
         .containsExactly(
             StatusCode.Code.ABORTED, StatusCode.Code.INTERNAL, StatusCode.Code.CANCELLED);
+  }
+
+  @Test
+  public void directClientSettings_withCredentialsProvider() throws Exception {
+    // Prepare - create a mock credentials provider
+    Credentials mockCredentials = GoogleCredentials.create(
+        new AccessToken("test-token", new Date(System.currentTimeMillis() + 3600000)));
+    CredentialsProvider credentialsProvider = FixedCredentialsProvider.create(mockCredentials);
+
+    // Execute
+    DirectClientSettings settings =
+        new DirectClientSettings.Builder()
+            .setCredentialsProvider(credentialsProvider)
+            .build();
+
+    // Verify the credentials provider is set
+    assertThat(settings.getCredentialsProvider()).isEqualTo(credentialsProvider);
+
+    // Verify BigtableDataSettings can be built successfully with the credentials provider
+    BigtableDataSettings btSettings =
+        settings
+            .toBigtableSettingsBuilder()
+            .setProjectId("test")
+            .setInstanceId("bigtable-instance")
+            .build();
+
+    // Settings should be created successfully without errors
+    assertThat(btSettings).isNotNull();
+    assertThat(btSettings.getProjectId()).isEqualTo("test");
+    assertThat(btSettings.getInstanceId()).isEqualTo("bigtable-instance");
+  }
+
+  @Test
+  public void directClientSettings_withoutCredentialsProvider() throws Exception {
+    // Execute - create settings without credentials provider
+    DirectClientSettings settings = new DirectClientSettings.Builder().build();
+
+    // Verify the credentials provider is null
+    assertThat(settings.getCredentialsProvider()).isNull();
+  }
+
+  @Test
+  public void directClientSettings_getCredentialsProvider() throws Exception {
+    // Prepare
+    Credentials mockCredentials = GoogleCredentials.create(
+        new AccessToken("test-token-123", new Date(System.currentTimeMillis() + 3600000)));
+    CredentialsProvider credentialsProvider = FixedCredentialsProvider.create(mockCredentials);
+
+    // Execute
+    DirectClientSettings settings =
+        new DirectClientSettings.Builder()
+            .setCredentialsProvider(credentialsProvider)
+            .build();
+
+    // Verify getter returns the correct provider
+    CredentialsProvider retrievedProvider = settings.getCredentialsProvider();
+    assertThat(retrievedProvider).isNotNull();
+    assertThat(retrievedProvider).isEqualTo(credentialsProvider);
   }
 }

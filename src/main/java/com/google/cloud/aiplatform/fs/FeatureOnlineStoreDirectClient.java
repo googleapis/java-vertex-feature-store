@@ -76,8 +76,8 @@ public class FeatureOnlineStoreDirectClient {
             .setFeatureOnlineStore(onlineStoreId)
             .build().toString();
     // Call GetFeatureOnlineStore and GetFeatureView APIs and save the metadata in cache.
-    CloudBigtableSpec btSpec = CloudBigtableCache.getInstance().getCloudBigtableSpec(fosName);
-    FeatureViewSpec fvSpec = FeatureViewCache.getInstance().getFeatureViewSpec(featureViewResourceName);
+    CloudBigtableSpec btSpec = CloudBigtableCache.getInstance(settings.map(DirectClientSettings::getCredentialsProvider)).getCloudBigtableSpec(fosName);
+    FeatureViewSpec fvSpec = FeatureViewCache.getInstance(settings.map(DirectClientSettings::getCredentialsProvider)).getFeatureViewSpec(featureViewResourceName);
     this.bigtableClientManager = new BigtableClientManager(btSpec, fvSpec, featureViewResourceName, locationId, settings);
   }
 
