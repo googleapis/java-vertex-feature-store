@@ -1,4 +1,5 @@
 steps:
   - name: 'gcr.io/cloud-builders/mvn'
     entrypoint: 'mvn'
-    args: ['clean', 'package']
+    # mvn verify does build, run unit tests and integration tests
+    args: ['verify', '-Dclirr.skip=true', '-DskipITs=false']
