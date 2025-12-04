@@ -1,8 +1,16 @@
 steps:
   - name: 'gcr.io/cloud-builders/mvn'
-    entrypoint: 'mvn'
+    entrypoint: 'bash'
     # mvn verify does build, run unit tests and integration tests
-    args: ['verify', '-Dclirr.skip=true', '-DskipITs=false', '-DprojectId="$${PROJECT_ID}"', '-DfeatureOnlineStoreId="$${FOS_ID}"', '-DfeatureViewId="$${FV_ID}"']
+    args:
+      - -c
+      - |
+        mvn verify \
+          -Dclirr.skip=true \
+          -DskipITs=false \
+          -DprojectId="$${PROJECT_ID}" \
+          -DfeatureOnlineStoreId="$${FOS_ID}" \
+          -DfeatureViewId="$${FV_ID}"
     secretEnv: ['PROJECT_ID', 'FOS_ID', 'FV_ID']
 
 # Test parameters such as project ID, FOS ID, FV ID are stored in the Secret Manager.
