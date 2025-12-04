@@ -8,9 +8,9 @@ steps:
 # Test parameters such as project ID, FOS ID, FV ID are stored in the Secret Manager.
 availableSecrets:
   secretManager:
-    - versionName: projects/692785347650/secrets/github_integration_test_project/versions/latest
+    - versionName: projects/692785347650/secrets/github_integration_test_project/versions/1
     - env: 'PROJECT_ID'
-    - versionName: projects/692785347650/secrets/feature_online_store_id/versions/latest
+    - versionName: projects/692785347650/secrets/feature_online_store_id/versions/1
     - env: 'FOS_ID'
-    - versionName: projects/692785347650/secrets/secrets/feature_view_id/versions/latest
+    - versionName: projects/692785347650/secrets/secrets/feature_view_id/versions/1
       env: 'FV_ID'
