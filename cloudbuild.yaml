@@ -2,15 +2,15 @@ steps:
   - name: 'gcr.io/cloud-builders/mvn'
     entrypoint: 'mvn'
     # mvn verify does build, run unit tests and integration tests
-    args: ['verify', '-Dclirr.skip=true', '-DskipITs=false', '-DprojectId=$$PROJECT_ID', '-DfeatureOnlineStoreId=$$FOS_ID', '-DfeatureViewId=$$FV_ID']
+    args: ['verify', '-Dclirr.skip=true', '-DskipITs=false', '-DprojectId=$${PROJECT_ID}', '-DfeatureOnlineStoreId=$${FOS_ID}', '-DfeatureViewId=$${FV_ID}']
     secretEnv: ['PROJECT_ID', 'FOS_ID', 'FV_ID']
 
 # Test parameters such as project ID, FOS ID, FV ID are stored in the Secret Manager.
 availableSecrets:
   secretManager:
     - versionName: projects/692785347650/secrets/github_integration_test_project/versions/1
-    - env: 'PROJECT_ID'
+      env: 'PROJECT_ID'
     - versionName: projects/692785347650/secrets/feature_online_store_id/versions/1
-    - env: 'FOS_ID'
-    - versionName: projects/692785347650/secrets/secrets/feature_view_id/versions/1
+      env: 'FOS_ID'
+    - versionName: projects/692785347650/secrets/feature_view_id/versions/1
       env: 'FV_ID'
