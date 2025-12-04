@@ -1,0 +1,4 @@
+steps:
+  - name: 'gcr.io/cloud-builders/mvn'
+    entrypoint: 'mvn'
+    args: ['clean', 'package']
