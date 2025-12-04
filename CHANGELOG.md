@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.0](https://github.com/googleapis/java-vertex-feature-store/compare/v0.2.0...v0.3.0) (2025-12-04)
+
+
+### Features
+
+* Added authentication flexibility by enabling CredentialsProvider injection into DirectClientSettings ([40b52ac](https://github.com/googleapis/java-vertex-feature-store/commit/40b52ac0b96e53291e0b581c44f20a97873b360a))
+* Added authentication flexibility by enabling CredentialsProvider injection into DirectClientSettings ([eb6de14](https://github.com/googleapis/java-vertex-feature-store/commit/eb6de142d71d263c4088e765b422fd87498e6888))
+
+
+### Bug Fixes
+
+* Batch fetch exists once all keys are read. ([129fdc6](https://github.com/googleapis/java-vertex-feature-store/commit/129fdc6e5f28b8b213d186f8a85997dec4204db4))
+* Batch fetch exits once all keys are read. ([719a387](https://github.com/googleapis/java-vertex-feature-store/commit/719a387ac056614583608dc4b124cdbd9f3bd072))
+* **deps:** update aiplatform.version to v3.81.0 ([6aba67f](https://github.com/googleapis/java-vertex-feature-store/commit/6aba67faf85e8ef50896fd55ef5438ba4c3b6afb))
+* **deps:** update aiplatform.version to v3.81.0 ([91e6be9](https://github.com/googleapis/java-vertex-feature-store/commit/91e6be95736c539df3ee582cf097d0a2625705a5))
+* **deps:** update dependency com.google.cloud:google-cloud-aiplatform-parent to v3.81.0 ([8ae0b72](https://github.com/googleapis/java-vertex-feature-store/commit/8ae0b72c505ca01bb4e6c06cc619a93a54a32293))
+* **deps:** update dependency com.google.cloud:google-cloud-aiplatform-parent to v3.81.0 ([6c355f0](https://github.com/googleapis/java-vertex-feature-store/commit/6c355f0b36f45f27458ea7af67128f65223e2dfd))
+* **deps:** update dependency com.google.cloud:google-cloud-bigtable to v2.70.0 ([912f85b](https://github.com/googleapis/java-vertex-feature-store/commit/912f85b419e544fd2200683161962b07cfd2cad2))
+* **deps:** update dependency com.google.cloud:google-cloud-bigtable to v2.70.0 ([7588eb3](https://github.com/googleapis/java-vertex-feature-store/commit/7588eb33d5ca65c71067ee76a551b5dbe72b4ba1))
+
 ## [0.2.0](https://github.com/googleapis/java-vertex-feature-store/compare/v0.1.0...v0.2.0) (2025-11-07)
 
 
