@@ -89,6 +89,13 @@
       <version>1.4.5</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.google.truth.extensions</groupId>
+      <artifactId>truth-proto-extension</artifactId>
+      <!-- Use the same version as the core Truth library -->
+      <version>1.4.5</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
