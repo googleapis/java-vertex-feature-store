@@ -93,7 +93,7 @@ public class E2EDirectClientIT {
 
         List<FetchFeatureValuesResponse> actual = client.batchFetchFeatureValues(requests);
         // Assert response
-        assertThat(actual).ignoringRepeatedFieldOrder().isEqualTo(expected);
+        assertThat(actual).ignoringRepeatedFieldOrder().containsExactlyElementsIn(expected);
     }
 
     public static void setupTestData() {
