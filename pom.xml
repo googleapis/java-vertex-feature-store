@@ -30,7 +30,7 @@
     <dependency>
       <groupId>com.google.api</groupId>
       <artifactId>gax-httpjson</artifactId>
-      <version>2.59.1</version>
+      <version>2.72.2</version>
     </dependency>
 
     <!-- aiplatform library -->
