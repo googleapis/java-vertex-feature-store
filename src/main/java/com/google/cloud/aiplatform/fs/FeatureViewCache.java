@@ -24,14 +24,10 @@ import com.google.cloud.aiplatform.v1.FeatureOnlineStoreAdminServiceClient;
 import com.google.cloud.aiplatform.v1.FeatureView;
 import com.google.cloud.aiplatform.v1.FeatureViewName;
 import com.google.cloud.aiplatform.v1.GetFeatureViewRequest;
-import com.google.cloud.aiplatform.fs.FeatureViewInternal;
-import com.google.protobuf.ExtensionRegistryLite;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import io.grpc.Status;
-
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -73,12 +69,7 @@ public final class FeatureViewCache {
                 GetFeatureViewRequest.newBuilder().setName(fvName).build();
             FeatureView fv = adminClient.getFeatureView(fvRequest);
             adminClient.close();
-            if (fv.hasBigtableMetadata()) {
-                return new FeatureViewSpec(fv);
-            }
-            // Failover check in case of field number mismatch.
-            FeatureViewInternal  internalFv = FeatureViewInternal.parseFrom(fv.toByteArray(), ExtensionRegistryLite.newInstance());
-            if (!internalFv.hasBigtableMetadata()) {
+            if (!fv.hasBigtableMetadata()) {
               throw new InvalidArgumentException(
                   new Throwable("Direct access to Bigtable is not enabled"),
                   /* statusCode= */ GrpcStatusCode.of(Status.Code.INVALID_ARGUMENT),
@@ -137,14 +128,6 @@ class FeatureViewSpec {
   FeatureViewSpec(FeatureView fv) {
       this.timestampsEnabled = false;
       this.continuousSyncEnabled = fv.getSyncConfig().getContinuous();
-      if (fv.hasBigtableMetadata()) {
-          this.readAppProfileId = fv.getBigtableMetadata().getReadAppProfile();
-          return;
-      }
-      // Failover check in case of field number mismatch.
-      try {
-          FeatureViewInternal  internalFv = FeatureViewInternal.parseFrom(fv.toByteArray(), ExtensionRegistryLite.newInstance());
-          this.readAppProfileId = internalFv.getBigtableMetadata().getReadAppProfile();
-      } catch (InvalidProtocolBufferException e) {}
+      this.readAppProfileId = fv.getBigtableMetadata().getReadAppProfile();
   }
 }
